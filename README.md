@@ -1,3 +1,5 @@
+# WORK IN PROGRESS.
+
 # SimpleSharp-GA
 
 Contains general Genetic algorithms to be used in:
