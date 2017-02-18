@@ -13,17 +13,21 @@ namespace SimpleSharp.Tests
 		public void BasicTest()
 		{
 			var c = 0;
-			var sols = GeneticAlgorithm.FindBestSolutions(100, 20, 5, 1, (arg) => arg.Data[0, 0] - arg.Data[1, 0] - arg.Data[2, 0] - arg.Data[3, 0] - arg.Data[4, 0], (arg1, arg2) =>
+			var sols = GeneticAlgorithm.FindBestSolutions(150, 20, 5, 1, (arg) => arg.Data[0, 0] - arg.Data[1, 0] - arg.Data[2, 0] - arg.Data[3, 0] - arg.Data[4, 0], (arg1, arg2) =>
 			{
+
 				c++;
 				for (int i = 0; i < 5; i++)
 				{
-					arg1.Data[i, 0] += _rnd.NextDouble() * arg2;
-					if (arg1.Data[i, 0] > 1) arg1.Data[i, 0] -= 1.0;
+					var max = arg2+arg1.Data[i, 0];
+					if (max > 1) max = 1.0;
+					var min = -arg2 +arg1.Data[i, 0];
+					if (min < 0) min = 0;
+					arg1.Data[i, 0] = _rnd.NextDouble()*(max-min)+min;
 				}
 			}, new Solution[0]);
 
-			//c == 36000
+			Assert.True(c > 45000);
 			Assert.True(sols[0].Evaluation > 0.99);
 		}
 	}
