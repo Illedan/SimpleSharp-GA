@@ -48,7 +48,7 @@ namespace SimpleSharp_GA
 			return ga.GetSortedResult();
 		}
 
-		public int newCreations = 0;
+		private readonly int _eliteChildren = 1;
 		private readonly int _crossOverCount;
 		private readonly int _mutationCount;
 
@@ -59,26 +59,24 @@ namespace SimpleSharp_GA
 		private Solution[] _solutions;
 		private Solution[] _nextSolutions;
 		private ISolutionDefinition _solutionDefinition;
-		private Stack<Solution> _garbadeSolutions;
 
 		private GeneticAlgorithm(int depth, 
 		                         int size, 
 		                         int populationSize, 
 		                         ISolutionDefinition solutionDefinition)
 		{
-			_garbadeSolutions = new Stack<Solution>();
 			_solutionDefinition = solutionDefinition;
 			_depth = depth;
 			_size = size;
 			_populationSize = populationSize;
 			_crossOverCount = (int)Math.Truncate(populationSize * 0.6);
-			_mutationCount = populationSize - 2 - _crossOverCount;
+			_mutationCount = populationSize - _eliteChildren - _crossOverCount;
 			_solutions = new Solution[populationSize];
 			_nextSolutions = new Solution[populationSize];
 
 			for (int i = 0; i < _populationSize; i++)
 			{
-				_garbadeSolutions.Push(new Solution(_depth, _size));
+				_nextSolutions[i] = new Solution(_depth, _size);
 			}
 		}
 
@@ -95,7 +93,7 @@ namespace SimpleSharp_GA
 					_solutions[i] = _solutionDefinition.CreateRandom(_depth, _size);
 				}
 			}
-			for (k = 0; k < _populationSize; k++)
+			for (var k = 0; k < _populationSize; k++)
 			{
 				_solutions[k].Evaluation = _solutionDefinition.Evaluation(_solutions[k]);
 			}
@@ -106,52 +104,60 @@ namespace SimpleSharp_GA
 			return _solutions.OrderByDescending(s => s.Evaluation).ToArray();
 		}
 
-		private Solution GetNew()
-		{
-			if (_garbadeSolutions.Count > 0)
-			{
-				var sol = _garbadeSolutions.Pop();
-				sol.Evaluation = null;
-				return sol;
-			}
-			newCreations++;
-			return new Solution(_depth, _size);
-		}
-
-		private int k;
+		private Solution[] Next = new Solution[1];
 		private void CreateNextGeneration(double amplitude)
 		{
+
+			//Elite children
 			_nextSolutions[0] = FindBest(null);
-			_nextSolutions[1] = FindBest(except:_nextSolutions[0]);
-			for (int i = 0; i < _mutationCount; i++)
+			//_nextSolutions[1] = FindBest(except:_nextSolutions[0]);
+
+			//Mutate best
+			_nextSolutions[1].Evaluation = null;
+			_nextSolutions[1] = _solutionDefinition.Mutate(_nextSolutions[0], _nextSolutions[1], amplitude);
+
+			//Mutate
+			for (int i = 0; i < _mutationCount-1; i++)
 			{
-				_nextSolutions[i + 2] = _solutionDefinition.Mutate(_solutions[_rnd.Next(0, _populationSize)], GetNew(), amplitude);
+				Next[0] = _nextSolutions[i + _eliteChildren + 1];
+				Next[0].Evaluation = null;
+				_nextSolutions[i + _eliteChildren+1] = _solutionDefinition.Mutate(_solutions[_rnd.Next(0, _populationSize)], Next[0], amplitude);
 			}
-			for (int i = 0; i < _crossOverCount; i++)
+
+			//CrossOver
+			for (int i = 0; i < _crossOverCount-1; i++)
 			{
-				_nextSolutions[i + 2 + _mutationCount] = CrossOver(_solutions[_rnd.Next(0, _populationSize)], _solutions[_rnd.Next(0, _populationSize)], GetNew());   
+				Next[0] = _nextSolutions[i + _eliteChildren + _mutationCount];
+				Next[0].Evaluation = null;
+				var f = _rnd.Next(0, _populationSize);
+				var s = _rnd.Next(0, _populationSize);
+				while (s == f) s = _rnd.Next(0, _populationSize);
+				_nextSolutions[i + _eliteChildren + _mutationCount] = CrossOver(_solutions[f], _solutions[s], Next[0]);   
 			}
-			for (int l = 0; l < _populationSize; l++)
-			{
-				if (!_nextSolutions.Contains(_solutions[l]))
-				{
-					_garbadeSolutions.Push(_solutions[l]);
-				}
-			}
+			_nextSolutions[_populationSize - 1] = _solutionDefinition.CreateRandom(_depth,_size);
+
 			var temp = _solutions;
 			_solutions = _nextSolutions;
 			_nextSolutions = temp;
-			for (k = 0; k < _populationSize; k++)
+
+			for ( var k = 0; k < _populationSize; k++)
 			{
-				if(_solutions[k].Evaluation==null) _solutions[k].Evaluation = _solutionDefinition.Evaluation(_solutions[k]);
+				if (_solutions[k].Evaluation == null)
+				{
+					_solutions[k].Evaluation = _solutionDefinition.Evaluation(_solutions[k]);
+				}
+				else {
+					NonEvaluations++;
+				}
 			}
 		}
+		private int NonEvaluations = 0;
 
 		private Solution FindBest( Solution except)
 		{
 			var current = double.MinValue;
 			Solution found = null;
-			for (k = 0; k < _populationSize; k++)
+			for (var k = 0; k < _populationSize; k++)
 			{
 				if (_solutions[k].Evaluation > current && except != _solutions[k])
 				{
@@ -172,17 +178,12 @@ namespace SimpleSharp_GA
 
 		private Solution CrossOver(Solution sol1, Solution sol2, Solution garbage)
 		{
-			if (sol1 == null || sol2 == null || garbage == null)
-			{
-
-			}
-			if (sol1 == sol2) return sol1;
 			for (int i = 0; i < _depth; i++)
 			{
 				for (var l = 0; l < _size; l++)
 				{
-					if (_rnd.Next(0, 2) == 1) garbage.Data[i, l] = sol2.Data[i, l];
-					else garbage.Data[i, l] = sol1.Data[i, l];
+					if (_rnd.Next(0, 2) == 1) garbage.Data[i, l] = sol2.Data[_rnd.Next(0,_depth), l];
+					else garbage.Data[i, l] = sol1.Data[_rnd.Next(0,_depth), l];
 				}
 			}
 			return sol1;
@@ -196,7 +197,7 @@ namespace SimpleSharp_GA
 			Data = new double[depth,size];
 		}
 
-		public double? Evaluation;
+		public double? Evaluation = null;
 		public double[,] Data;
 	}
 }
