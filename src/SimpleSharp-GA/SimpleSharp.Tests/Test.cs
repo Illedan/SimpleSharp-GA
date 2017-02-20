@@ -10,11 +10,24 @@ namespace SimpleSharp.Tests
 		[Test()]
 		public void BasicTest()
 		{
-			var def = new GADefinition();
-			var sols = GeneticAlgorithm.FindBestSolutions(150, 20, 5, 1, def, new Solution[0]);
+			var most = 0;
+			var min = 10000000;
+			double bestEval = 0;
+			double lowestEval = 1000000;
+			for (int i = 0; i < 100; i++)
+			{
 
-			Assert.True(def.Evaluations > 100000);
-			Assert.True(sols[0].Evaluation > 30.0);
+				var def = new GADefinition();
+				var sols = GeneticAlgorithm.FindBestSolutions(150, 20, 5, 1, def, new Solution[0]);
+
+				Assert.True(def.Evaluations > 80000);
+				if (def.Evaluations > most) most = def.Evaluations;
+				if (def.Evaluations < min) min = def.Evaluations;
+				
+				Assert.True(sols[0].Evaluation > 47.0);
+				if (sols[0].Evaluation > bestEval) bestEval = sols[0].Evaluation.Value;
+				if (sols[0].Evaluation < lowestEval) lowestEval = sols[0].Evaluation.Value;
+			}
 		}
 	}
 

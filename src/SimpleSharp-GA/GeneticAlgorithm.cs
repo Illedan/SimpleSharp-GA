@@ -107,10 +107,26 @@ namespace SimpleSharp_GA
 		private Solution[] Next = new Solution[1];
 		private void CreateNextGeneration(double amplitude)
 		{
-
 			//Elite children
-			_nextSolutions[0] = FindBest(null);
-			//_nextSolutions[1] = FindBest(except:_nextSolutions[0]);
+			var bestPos = FindBest(null);
+			for (int i = 0; i < _populationSize; i++)
+			{
+				if (_nextSolutions[i] == _solutions[bestPos])
+				{
+					_nextSolutions[i] = new Solution(_depth, _size);
+				}
+			}
+			_nextSolutions[0] = _solutions[bestPos];
+
+			//var secondBestPos = FindBest(except: _nextSolutions[0]);
+			//for (int i = 0; i < _populationSize; i++)
+			//{
+			//	if (_nextSolutions[i] == _solutions[secondBestPos])
+			//	{
+			//		_nextSolutions[i] = new Solution(_depth, _size);
+			//	}
+			//}
+			//_nextSolutions[1] = _solutions[secondBestPos];
 
 			//Mutate best
 			_nextSolutions[1].Evaluation = null;
@@ -134,6 +150,8 @@ namespace SimpleSharp_GA
 				while (s == f) s = _rnd.Next(0, _populationSize);
 				_nextSolutions[i + _eliteChildren + _mutationCount] = CrossOver(_solutions[f], _solutions[s], Next[0]);   
 			}
+
+			//One random.
 			_nextSolutions[_populationSize - 1] = _solutionDefinition.CreateRandom(_depth,_size);
 
 			var temp = _solutions;
@@ -153,16 +171,16 @@ namespace SimpleSharp_GA
 		}
 		private int NonEvaluations = 0;
 
-		private Solution FindBest( Solution except)
+		private int FindBest( Solution except)
 		{
 			var current = double.MinValue;
-			Solution found = null;
+			int found = 0;
 			for (var k = 0; k < _populationSize; k++)
 			{
 				if (_solutions[k].Evaluation > current && except != _solutions[k])
 				{
 					current = _solutions[k].Evaluation.Value;
-					found = _solutions[k];
+					found = k;
 				}
 			}
 			return found;
