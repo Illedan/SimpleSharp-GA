@@ -10,10 +10,10 @@ namespace SimpleSharp.Tests
 		[Test()]
 		public void BasicTest()
 		{
-			var most = 0;
-			var min = 10000000;
-			double bestEval = 0;
-			double lowestEval = 1000000;
+			var most = 0; // 114149
+			var min = 10000000; // 91109
+			double bestEval = 0; 		 // 48,5493
+			double lowestEval = 1000000; // 48,5361
 			for (int i = 0; i < 100; i++)
 			{
 
