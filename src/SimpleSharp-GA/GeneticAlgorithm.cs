@@ -208,14 +208,14 @@ namespace SimpleSharp_GA
 		}
 	}
 
-	public class Solution
-	{
-		public Solution(int depth, int size)
-		{
-			Data = new double[depth,size];
-		}
+	//public class Solution
+	//{
+	//	public Solution(int depth, int size)
+	//	{
+	//		Data = new double[depth,size];
+	//	}
 
-		public double? Evaluation = null;
-		public double[,] Data;
-	}
+	//	public double? Evaluation = null;
+	//	public double[,] Data;
+	//}
 }
